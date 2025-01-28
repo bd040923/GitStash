@@ -1,0 +1,67 @@
+The report is showing incorrect information regarding shipments.
+
+For example, in October 2023, the report displays 89K shipments, while the actual number was 514K.
+
+This discrepancy raises concerns about missing or inaccurate data being pulled into the report.
+
+The user suspects that it might not be limited to just October 2023 and requests a review of the logic supporting the report to ensure accurate data capture.
+
+
+
+How to address : 
+
+Data Validation: Verify the data sources to ensure that the correct datasets are being used in the report.
+
+Query Logic: Review the query logic and filters applied to ensure that the data is being fetched accurately.
+
+Date Filtering: Check if the date filters are correctly set to include the relevant data for October 2023.
+
+Data Integration: Confirm that all necessary datasets are integrated correctly to reflect the actual shipment numbers.
+
+Report Refresh: Consider refreshing the report to pull in the latest data and check if the discrepancies are resolved.
+
+Consultation: If needed, consult with the team responsible for data management and reporting to investigate the issue further.
+
+
+
+query seems to be retrieving data from different sources like 'd365', 'safelink', 'ac', and 'FORT'. Each part of the query is handling data aggregation and formatting based on specific conditions for each source system.
+
+Here are some key points observed in the query:
+
+The query is aggregating shipment data from multiple systems based on different criteria such as SalesOrderNumber, Shipments, and BottleQty.
+It includes logic for date formatting and time zone conversion to ensure consistency in date representation across systems.
+The query uses various joins and filters to fetch relevant data from different tables for each system.
+Grouping is done based on specific columns to summarize the data at the desired level.
+
+Base tables referenced in the code for each system:
+
+'d365' System:
+
+Base Table: gold.d365shipmentdetails
+'safelink' System:
+
+Base Tables:
+silver.safe_shipments b
+silver.safe_wineorders a
+silver.safe_accounts ac
+Third System (referred to as 'ac' in the query):
+
+Base Tables:
+silver.pnb_parcel b
+silver.pnb_order a
+silver.misc_warehousenames wn
+silver.pnb_client ac
+'FORT' System:
+
+Base Table: gold.fortshipmentdetails
+These are the main base tables used in the query for each system to retrieve and aggregate the shipment-related data.
+
+
+The 89K mentioned in the report refers to the quantity of shipments reported for October 2023.
+
+This number indicates that, according to the data displayed in the report, there were approximately 89,000 shipments recorded for that specific month.
+
+However, as per the client's statement, the actual number of shipments for October 2023 was 514K (514,000 shipments) based on their records or expectations.
+
+The significant difference between the reported 89K and the actual 514K suggests that there may be data discrepancies or missing information in the report, leading to inaccurate representation of the shipment quantities for that month.
+

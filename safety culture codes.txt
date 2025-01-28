@@ -1,0 +1,238 @@
+import requests
+import json
+from pyspark.sql import SparkSession
+from pyspark.sql import Row
+
+# Set the custom configuration to whitelist the createRDDFromTrustedPath method
+spark = SparkSession.builder.getOrCreate()
+
+# Base URL and token
+base_url = "https://api.safetyculture.io"
+headers = {"Authorization": "Bearer 5c01584d82b28c207bbfbc5666fd32ae0412c3ac65aff88f6c0ba104bc1f5ce2"}
+
+# Fetch audits
+response = requests.get(f"{base_url}/audits/search", headers=headers)
+data = response.json()
+
+if response.status_code == 200:
+    # Extract valid audit IDs from the fetched data
+    valid_audit_ids = [audit["audit_id"] for audit in data.get("audits", [])]
+
+    for specific_audit_id in valid_audit_ids:
+        export_url = f"{base_url}/audits/{specific_audit_id}"
+        export_response = requests.get(export_url, headers=headers)
+
+        if export_response.status_code == 200:
+            specific_exported_data = export_response.json()
+            print(f"Exported data for audit_id {specific_audit_id}: {specific_exported_data}")
+
+            # Convert JSON data to a list of dictionaries
+            data_list = [{"data": json.dumps(item)} for item in specific_exported_data]
+
+            # Create DataFrame from the list of dictionaries
+            spark_df = spark.createDataFrame([Row(**r) for r in data_list])
+
+            # Write data to a new table for full load
+            spark_df.write.format("delta").mode("overwrite").saveAsTable("lab.qa.safetyculture_preferences")
+            print("Data successfully written to Databricks table (Overwritten for full load): safetyculture_preferences")
+        else:
+            print(f"Failed to export audit_id: {specific_audit_id}, Status: {export_response.status_code}. Export URL: {export_url}")
+
+    print("All audit data processed and written to Delta table with full load.")
+else:
+    print("Failed to fetch audits, Status:", response.status_code)
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	import requests
+import json
+from pyspark.sql import SparkSession
+import pandas as pd
+import os
+
+# Initialize Spark session
+spark = SparkSession.builder.getOrCreate()
+
+# Get the current directory
+
+config_file_path = os.path.join(current_dir, "config.json")
+
+# Read configuration from the JSON file
+with open(config_file_path) as config_file:
+    config = json.load(config_file)
+    api_token = config["api_token"]
+    base_url = config["base_url"]
+
+# Function to fetch all audit data by handling pagination
+def fetch_all_audit_data(url, headers):
+    all_audit_data = []
+    while url:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            all_audit_data.extend(data.get("audits", []))
+            url = data.get("next")
+        else:
+            print(f"Failed to fetch audit data. Status Code: {response.status_code}")
+            break
+    return all_audit_data
+
+# Fetch all audit data
+response = requests.get(f"{base_url}/audits/search", headers={"Authorization": f"Bearer {api_token}"})
+data = response.json()
+
+if response.status_code == 200:
+    all_audit_data = fetch_all_audit_data(f"{base_url}/audits/search", headers={"Authorization": f"Bearer {api_token}"})
+
+    if all_audit_data:
+        for audit in all_audit_data:
+            specific_audit_id = audit.get("audit_id")
+            export_url = f"{base_url}/audits/{specific_audit_id}"
+            export_response = requests.get(export_url, headers={"Authorization": f"Bearer {api_token}"})
+
+            if export_response.status_code == 200:
+                specific_exported_data = export_response.json()
+                print(f"Exported data for audit_id {specific_audit_id}: {specific_exported_data}")
+
+                # Convert filtered data to Pandas DataFrame
+                df = pd.json_normalize([specific_exported_data])
+
+                # Initialize SparkSession and convert Pandas DataFrame to Spark DataFrame
+                spark_df = spark.createDataFrame(df)
+                
+                # Write data to a Delta table with the mergeSchema option
+                spark_df.write.format("delta").mode("overwrite").saveAsTable("lab.qa.safetyculture_preferences")
+                print("Data successfully written to Databricks table: safetyculture_preferences")
+            else:
+                print(f"Failed to export audit_id: {specific_audit_id}, Status: {export_response.status_code}. Export URL: {export_url}")
+
+        print("All audit data processed and written to Delta table.")
+    else:
+        print("No valid audit data found.")
+else:
+    print(f"Failed to fetch audits, Status: {response.status_code}")
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	import requests
+import json
+
+# Base URL and token
+base_url = "https://api.safetyculture.io"
+headers = {"Authorization": "Bearer 5c01584d82b28c207bbfbc5666fd32ae0412c3ac65aff88f6c0ba104bc1f5ce2"}
+
+# Function to fetch all audit data by handling pagination
+def fetch_all_audit_data(url, headers):
+    all_audit_data = []
+    while url:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            all_audit_data.extend(data.get("audits", []))
+            url = data.get("next")
+        else:
+            print(f"Failed to fetch audit data. Status Code: {response.status_code}")
+            break
+    return all_audit_data
+
+# Fetch all audit data
+response = requests.get(f"{base_url}/audits/search", headers=headers)
+data = response.json()
+
+if response.status_code == 200:
+    all_audit_data = fetch_all_audit_data(f"{base_url}/audits/search", headers)
+    if all_audit_data:
+        for audit in all_audit_data:
+            specific_audit_id = audit.get("audit_id")
+            export_url = f"{base_url}/audits/{specific_audit_id}"
+            export_response = requests.get(export_url, headers=headers)
+
+            if export_response.status_code == 200:
+                specific_exported_data = export_response.json()
+                print(f"Exported data for audit_id {specific_audit_id}: {specific_exported_data}")   
+            else:
+                print(f"Failed to export audit_id: {specific_audit_id}, Status: {export_response.status_code}. Export URL: {export_url}")
+    else:
+        print("No valid audit data found.")
+else:
+    print(f"Failed to fetch audits, Status: {response.status_code}")
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	import requests
+import json
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, BooleanType
+from pyspark.sql import Row
+import pandas as pd
+
+# Initialize Spark session
+spark = SparkSession.builder.getOrCreate()
+
+# Define the function to infer schema based on data types
+def infer_schema(data):
+    fields = []
+    for key, value in data.items():
+        if isinstance(value, str):
+            field_type = StringType()
+        elif isinstance(value, int):
+            field_type = IntegerType()
+        elif isinstance(value, float):
+            field_type = FloatType()
+        elif isinstance(value, bool):
+            field_type = BooleanType()
+        else:
+            field_type = StringType()  # Default to StringType if type is not recognized
+        fields.append(StructField(key, field_type, True))
+    return StructType(fields)
+
+# Your extraction and data preparation code here...
+
+# Convert extracted data to a Pandas DataFrame
+df = pd.DataFrame(extracted_data_list)
+
+# Infer schema based on the Pandas DataFrame
+schema = infer_schema(df.iloc[0])
+
+# Convert Pandas DataFrame to PySpark DataFrame
+extracted_df = spark.createDataFrame(df, schema=schema)
+
+# Write data to a Delta table with full load (overwrite existing data)
+extracted_df.write.format("delta").mode("overwrite").saveAsTable("lab.qa.safetyculture_preferences")
+
+# Show the extracted data
+extracted_df.show(truncate=False)
